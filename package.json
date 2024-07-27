@@ -4,8 +4,8 @@
   "description": "A base for your backend project",
   "main": "index.js",
   "scripts": {
-		"dev": "nodemon --watch src src/index.ts",
-		"build": "tsc -p tsconfig.json"
+    "dev": "nodemon --watch src src/index.ts",
+    "build": "tsc -p tsconfig.json"
   },
   "author": "Deyan Dobrinov",
   "dependencies": {
@@ -15,6 +15,7 @@
   "devDependencies": {
     "@types/node": "^20.14.12",
     "nodemon": "^3.1.4",
+    "prettier": "3.3.3",
     "typescript": "^5.5.4"
   }
 }
