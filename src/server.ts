@@ -8,7 +8,7 @@ import * as jose from "jose";
 import { schema } from "./graphql/schema";
 import { checkPassword } from "./util/password";
 
-const GRAPHIQL = readFileSync("public/graphiql.html");
+const GRAPHIQL = readFileSync("graphiql.html");
 
 const server: FastifyInstance<Server, IncomingMessage, ServerResponse> =
   fastify({ logger: true });
