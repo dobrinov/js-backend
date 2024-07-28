@@ -5,9 +5,6 @@ import {
   GraphQLString,
 } from "graphql";
 
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
-
 const user = new GraphQLObjectType({
   name: "User",
   fields: {
@@ -23,12 +20,7 @@ export const schema = new GraphQLSchema({
     fields: {
       viewer: {
         type: user,
-        async resolve() {
-          const users = await prisma.user.findMany();
-          const user = users[0];
-
-          return user;
-        },
+        resolve: (_parent, _args, contextValue) => contextValue.currentUser,
       },
     },
   }),

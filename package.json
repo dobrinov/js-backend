@@ -10,18 +10,21 @@
     "db:drop": "source .env && dropdb $DATABASE_NAME",
     "db:seed": "ts-node prisma/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "db:reset": "npx prisma migrate reset && npm run db:migrate"
+    "db:reset": "npx prisma migrate reset && npm run db:seed"
   },
   "author": "Deyan Dobrinov",
   "dependencies": {
     "@prisma/client": "^5.17.0",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "graphql": "^16.9.0",
+    "jose": "^5.6.3",
     "prisma": "^5.17.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.14.12",
     "nodemon": "^3.1.4",
     "prettier": "3.3.3",

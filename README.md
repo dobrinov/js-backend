@@ -9,11 +9,20 @@ npm run db:setup
 npm run dev
 ```
 
+#### Get a JWT token
+```bash
+curl http://localhost:8080/session \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email": "john@example.com", "password": "1"}'
+```
+
 #### Executing a GraphQL operation
 ```bash
 curl http://localhost:8080/graph \
   -X POST \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer JWT_TOKEN_GOES_HERE" \
   -d '{"query": "query { viewer { id name email } }"}'
 ```
 
