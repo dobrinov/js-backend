@@ -6,6 +6,7 @@
   "editor.codeActionsOnSave": { "source.organizeImports": "explicit" },
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "[html]": { "editor.formatOnSave": true },
   "[jsonc]": { "editor.formatOnSave": true },
   "[javascript]": { "editor.formatOnSave": true },
   "[typescript]": { "editor.formatOnSave": true },

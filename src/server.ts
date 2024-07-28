@@ -1,7 +1,10 @@
 import { fastify, FastifyInstance } from "fastify";
+import { readFileSync } from "fs";
 import { graphql } from "graphql";
 import { IncomingMessage, Server, ServerResponse } from "http";
 import { schema } from "./schema";
+
+const GRAPHIQL = readFileSync("public/graphiql.html");
 
 const server: FastifyInstance<Server, IncomingMessage, ServerResponse> =
   fastify({ logger: true });
@@ -26,6 +29,10 @@ server.post<{
       error instanceof Error ? error.message : "Oops something went wrong";
     return response.code(500).send(message);
   }
+});
+
+server.get("/graphiql", async function (_request, response) {
+  response.type("text/html").send(GRAPHIQL);
 });
 
 server.listen({ port: 8080 }, (err, address) => {
