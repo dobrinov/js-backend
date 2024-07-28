@@ -9,7 +9,7 @@ npm run db:setup
 npm run dev
 ```
 
-#### Get a JWT token
+#### Create a session
 ```bash
 curl http://localhost:8080/session \
   -X POST \
