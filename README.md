@@ -5,7 +5,8 @@ You can use this project as a starting point for your Node GraphQL backend.
 ### Getting started
 ```
 npm install
-npm start dev
+npm run db:setup
+npm run dev
 ```
 
 #### Executing a GraphQL operation
@@ -13,7 +14,7 @@ npm start dev
 curl http://localhost:8080/graph \
   -X POST \
   -H "Content-Type: application/json" \
-  -d '{"query": "...", "variables": {...}}'
+  -d '{"query": "query { viewer { id name email } }"}'
 ```
 
 #### GraphiQL

@@ -4,12 +4,21 @@
   "description": "A base for your backend project",
   "scripts": {
     "dev": "nodemon --watch src src/server.ts",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "db:console": "source .env && psql -d $DATABASE_NAME",
+    "db:migrate": "npx prisma migrate dev",
+    "db:drop": "source .env && dropdb $DATABASE_NAME",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "db:reset": "npx prisma migrate reset && npm run db:migrate"
   },
   "author": "Deyan Dobrinov",
   "dependencies": {
+    "@prisma/client": "^5.17.0",
+    "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "graphql": "^16.9.0",
+    "prisma": "^5.17.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {

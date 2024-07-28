@@ -2,7 +2,7 @@ import { fastify, FastifyInstance } from "fastify";
 import { readFileSync } from "fs";
 import { graphql } from "graphql";
 import { IncomingMessage, Server, ServerResponse } from "http";
-import { schema } from "./schema";
+import { schema } from "./graphql/schema";
 
 const GRAPHIQL = readFileSync("public/graphiql.html");
 
