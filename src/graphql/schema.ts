@@ -19,7 +19,7 @@ export const schema = new GraphQLSchema({
     name: "Query",
     fields: {
       viewer: {
-        type: user,
+        type: new GraphQLNonNull(user),
         resolve: (_parent, _args, contextValue) => contextValue.currentUser,
       },
     },
