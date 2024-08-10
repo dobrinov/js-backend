@@ -1,11 +1,11 @@
 import cors from "@fastify/cors";
-import { PrismaClient } from "@prisma/client";
 import "dotenv/config";
 import { fastify, FastifyInstance } from "fastify";
 import { readFileSync } from "fs";
 import { graphql } from "graphql";
 import { IncomingMessage, Server, ServerResponse } from "http";
 import * as jose from "jose";
+import prisma from "./db";
 import { schema } from "./graphql/schema";
 import { checkPassword } from "./util/password";
 
@@ -44,7 +44,6 @@ async function execute() {
     if (!("userId" in claims) || typeof claims.userId !== "number")
       return response.code(400).send(errorResponseBody("Invalid token"));
 
-    const prisma = new PrismaClient();
     const currentUser = prisma.user.findUnique({
       where: { id: claims.userId },
     });
@@ -84,7 +83,6 @@ async function execute() {
       const secret = process.env.JWT_SECRET;
 
       const { email, password } = request.body;
-      const prisma = new PrismaClient();
 
       const user = await prisma.user.findUnique({ where: { email } });
 
