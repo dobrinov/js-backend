@@ -14,7 +14,7 @@ npm run dev
 curl http://localhost:8080/session \
   -X POST \
   -H "Content-Type: application/json" \
-  -d '{"email": "john@example.com", "password": "1"}'
+  -d '{"email": "admin@example.com", "password": "1"}'
 ```
 
 #### Executing a GraphQL operation
