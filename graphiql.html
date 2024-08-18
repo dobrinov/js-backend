@@ -25,11 +25,28 @@
   <body>
     <div id="root">Loading...</div>
     <script>
-      const root = ReactDOM.createRoot(document.getElementById("root"));
-      const fetcher = GraphiQL.createFetcher({
-        url: "http://localhost:8080/graph",
+      fetch("http://localhost:8080/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "admin@example.com", password: "1" }),
+      }).then((response) => {
+        if (response.ok) {
+          response.text().then((token) => {
+            renderGraphiQL(token);
+          });
+        } else {
+          console.error("Failed to authenticate");
+        }
       });
-      root.render(React.createElement(GraphiQL, { fetcher }));
+
+      function renderGraphiQL(token) {
+        const fetcher = GraphiQL.createFetcher({
+          url: "http://localhost:8080/graph",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(React.createElement(GraphiQL, { fetcher }));
+      }
     </script>
   </body>
 </html>
