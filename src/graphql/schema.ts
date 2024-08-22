@@ -47,16 +47,18 @@ export const schema = new GraphQLSchema({
         type: new GraphQLNonNull(UserConnection),
         args: connectionArgs,
         resolve: async (_parent, args) => {
+          const first = args.first ?? 10;
+
           const usersPlusOne = await prisma.user.findMany({
-            take: args.first + 1,
+            take: first,
             skip: args.after ? cursorToOffset(args.after) : undefined,
             orderBy: {
               id: "asc",
             },
           });
 
-          const users = usersPlusOne.slice(0, args.first);
-          const hasNextPage = usersPlusOne.length > args.first;
+          const users = usersPlusOne.slice(0, first);
+          const hasNextPage = usersPlusOne.length > first;
           const startCursor =
             users.length > 0 ? offsetToCursor(users[0].id) : null;
           const endCursor =
