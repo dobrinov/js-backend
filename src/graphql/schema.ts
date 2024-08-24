@@ -1,16 +1,12 @@
 import {
   GraphQLEnumType,
+  GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
 } from "graphql";
-import {
-  connectionArgs,
-  connectionDefinitions,
-  cursorToOffset,
-  offsetToCursor,
-} from "graphql-relay";
+import { connectionArgs, cursorToOffset, offsetToCursor } from "graphql-relay";
 import prisma from "../db";
 
 const UserRoleEnumType = new GraphQLEnumType({
@@ -31,9 +27,35 @@ const user = new GraphQLObjectType({
   },
 });
 
-var { connectionType: UserConnection } = connectionDefinitions({
-  nodeType: user,
+const pageInfo = new GraphQLObjectType({
+  name: "PageInfo",
+  fields: {
+    startCursor: { type: GraphQLString },
+    endCursor: { type: GraphQLString },
+    hasPreviousPage: { type: new GraphQLNonNull(GraphQLString) },
+    hasNextPage: { type: new GraphQLNonNull(GraphQLString) },
+  },
 });
+
+const userEdge = new GraphQLObjectType({
+  name: "UserEdge",
+  fields: {
+    cursor: { type: new GraphQLNonNull(GraphQLString) },
+    node: { type: new GraphQLNonNull(user) },
+  },
+});
+
+const userConnection = new GraphQLNonNull(
+  new GraphQLObjectType({
+    name: "UserConnection",
+    fields: {
+      edges: {
+        type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(userEdge))),
+      },
+      pageInfo: { type: new GraphQLNonNull(pageInfo) },
+    },
+  })
+);
 
 export const schema = new GraphQLSchema({
   query: new GraphQLObjectType({
@@ -44,7 +66,7 @@ export const schema = new GraphQLSchema({
         resolve: (_parent, _args, contextValue) => contextValue.currentUser,
       },
       users: {
-        type: new GraphQLNonNull(UserConnection),
+        type: userConnection,
         args: connectionArgs,
         resolve: async (_parent, args) => {
           const first = args.first ?? 10;
