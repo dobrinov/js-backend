@@ -54,7 +54,7 @@ const userConnection = new GraphQLNonNull(
       },
       pageInfo: { type: new GraphQLNonNull(pageInfo) },
     },
-  })
+  }),
 );
 
 export const schema = new GraphQLSchema({

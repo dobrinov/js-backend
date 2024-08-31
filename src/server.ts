@@ -105,7 +105,7 @@ async function execute() {
       response.header("Access-Control-Allow-Origin", "*");
       response.header("Access-Control-Allow-Methods", "POST");
       response.send(jwt);
-    }
+    },
   );
 
   server.listen({ port: 8080 }, (err, address) => {
