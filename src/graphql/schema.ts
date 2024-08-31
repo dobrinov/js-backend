@@ -68,38 +68,64 @@ export const schema = new GraphQLSchema({
       users: {
         type: userConnection,
         args: connectionArgs,
-        resolve: async (_parent, args) => {
-          const first = args.first ?? 10;
+        resolve: async (_parent, args, contextValue) => {
+          const currentUser = await contextValue.currentUser;
 
-          const usersPlusOne = await prisma.user.findMany({
-            take: first,
-            skip: args.after ? cursorToOffset(args.after) : undefined,
-            orderBy: {
-              id: "asc",
-            },
-          });
+          if (currentUser.role === "ADMIN") {
+            const first = args.first ?? 10;
 
-          const users = usersPlusOne.slice(0, first);
-          const hasNextPage = usersPlusOne.length > first;
-          const startCursor =
-            users.length > 0 ? offsetToCursor(users[0].id) : null;
-          const endCursor =
-            users.length > 0
-              ? offsetToCursor(users[users.length - 1].id)
-              : null;
+            const usersPlusOne = await prisma.user.findMany({
+              take: first + 1,
+              skip: args.after ? cursorToOffset(args.after) : undefined,
+              orderBy: {
+                id: "asc",
+              },
+            });
 
-          return {
-            edges: users.map((user) => ({
-              cursor: offsetToCursor(user.id),
-              node: user,
-            })),
-            pageInfo: {
-              startCursor,
-              endCursor,
-              hasPreviousPage: false,
-              hasNextPage,
-            },
-          };
+            const users = usersPlusOne.slice(0, first);
+            const hasNextPage = usersPlusOne.length > first;
+            const startCursor =
+              users.length > 0 ? offsetToCursor(users[0].id) : null;
+            const endCursor =
+              users.length > 0
+                ? offsetToCursor(users[users.length - 1].id)
+                : null;
+
+            return {
+              edges: users.map((user) => ({
+                cursor: offsetToCursor(user.id),
+                node: user,
+              })),
+              pageInfo: {
+                startCursor,
+                endCursor,
+                hasPreviousPage: false,
+                hasNextPage,
+              },
+            };
+          } else {
+            const users = await prisma.user.findMany({
+              where: {
+                id: currentUser.id,
+              },
+              orderBy: {
+                id: "asc",
+              },
+            });
+
+            return {
+              edges: users.map((user) => ({
+                cursor: offsetToCursor(user.id),
+                node: user,
+              })),
+              pageInfo: {
+                startCursor: offsetToCursor(users[0].id),
+                endCursor: offsetToCursor(users[0].id),
+                hasPreviousPage: false,
+                hasNextPage: false,
+              },
+            };
+          }
         },
       },
     },
