@@ -25,13 +25,21 @@
   <body>
     <div id="root">Loading...</div>
     <script>
+      const email =
+        new URLSearchParams(window.location.search).get("email") ??
+        "admin@example.com";
+
       fetch("http://localhost:8080/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@example.com", password: "1" }),
+        body: JSON.stringify({ email, password: "1" }),
       }).then((response) => {
         if (response.ok) {
           response.text().then((token) => {
+            localStorage.setItem(
+              "graphiql:headers",
+              JSON.stringify({ Authorization: `Bearer ${token}` })
+            );
             renderGraphiQL(token);
           });
         } else {

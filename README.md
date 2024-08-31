@@ -30,3 +30,9 @@ curl http://localhost:8080/graph \
 ```
 open http://localhost:8080/graphiql
 ```
+
+This will log you in with admin@example.com. If you want to use basic@example.com:
+
+```
+open http://localhost:8080/graphiql?email=basic@example.com
+```
