@@ -21,6 +21,17 @@ export async function seed() {
       passwordDigest: hashPassword("1"),
     },
   });
+
+  for (let index = 1; index <= 10; index++) {
+    await prisma.user.create({
+      data: {
+        name: `Wildcard Doe`,
+        email: `npc-${index}@example.com`,
+        role: "BASIC",
+        passwordDigest: hashPassword("1"),
+      },
+    });
+  }
 }
 
 seed();
