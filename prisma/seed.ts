@@ -25,7 +25,7 @@ export async function seed() {
   for (let index = 1; index <= 10; index++) {
     await prisma.user.create({
       data: {
-        name: `Wildcard Doe`,
+        name: `Wildcard Doe ${index}`,
         email: `npc-${index}@example.com`,
         role: "BASIC",
         passwordDigest: hashPassword("1"),
