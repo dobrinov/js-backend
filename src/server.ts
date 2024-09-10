@@ -75,7 +75,14 @@ async function execute() {
     const token = authorization.replace("Bearer ", "");
     const { user, error } = await decodeJWT(token);
 
-    if (error) return response.code(401).send(errorResponseBody(error));
+    if (error || !user)
+      return response
+        .code(401)
+        .send(errorResponseBody(error ?? "Unauthorized"));
+
+    if (user.suspendedAt !== null) {
+      return response.code(401).send(errorResponseBody("User is suspended"));
+    }
 
     try {
       const result = await graphql({
@@ -108,6 +115,10 @@ async function execute() {
       if (!checkPassword(password, user.passwordDigest))
         return response.code(401).send("Invalid email or password");
 
+      if (user.suspendedAt !== null) {
+        return response.code(401).send("User is suspended");
+      }
+
       const jwt = await encodeJWT(user.id);
 
       response.header("Access-Control-Allow-Origin", "*");
@@ -132,11 +143,23 @@ async function execute() {
       if (error) return response.code(401).send(errorResponseBody(error));
 
       const { userId } = request.body;
+      const userToSuspend = await prisma.user.findUnique({
+        where: { id: parseInt(userId) },
+      });
 
-      if (parseInt(userId) === user.id)
+      if (!userToSuspend)
+        return response.code(400).send(errorResponseBody("User not found"));
+
+      if (userToSuspend.id === user.id)
         return response
           .code(400)
           .send(errorResponseBody("Cannot impersonate yourself"));
+
+      if (userToSuspend.suspendedAt !== null) {
+        return response
+          .code(400)
+          .send(errorResponseBody("Cannot impersonate a suspended user"));
+      }
 
       const jwt = await encodeJWT(parseInt(userId), user.id);
 

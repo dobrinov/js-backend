@@ -1,5 +1,6 @@
 import {
   GraphQLEnumType,
+  GraphQLID,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
@@ -24,6 +25,7 @@ const user = new GraphQLObjectType({
     name: { type: new GraphQLNonNull(GraphQLString) },
     email: { type: new GraphQLNonNull(GraphQLString) },
     role: { type: new GraphQLNonNull(UserRoleEnumType) },
+    suspendedAt: { type: GraphQLString },
   },
 });
 
@@ -54,8 +56,66 @@ const userConnection = new GraphQLNonNull(
       },
       pageInfo: { type: new GraphQLNonNull(pageInfo) },
     },
-  }),
+  })
 );
+
+const Mutation = new GraphQLObjectType({
+  name: "Mutation",
+  fields: {
+    suspendUser: {
+      type: new GraphQLObjectType({
+        name: "suspendUserPayload",
+        fields: {
+          user: { type: user },
+        },
+      }),
+      args: { userId: { type: new GraphQLNonNull(GraphQLID) } },
+      resolve: async (_parent, args, contextValue) => {
+        const currentUser = await contextValue.currentUser;
+
+        if (currentUser.role !== "ADMIN") throw new Error("Unauthorized");
+
+        const user = await prisma.user.update({
+          where: {
+            id: parseInt(args.userId), // Use Relay ID here
+          },
+          data: {
+            suspendedAt: new Date(),
+          },
+        });
+
+        return { user };
+      },
+    },
+    activateUser: {
+      type: new GraphQLObjectType({
+        name: "activateUserPayload",
+        fields: {
+          user: { type: user },
+        },
+      }),
+      args: { userId: { type: new GraphQLNonNull(GraphQLID) } },
+      resolve: async (_parent, args, contextValue) => {
+        const currentUser = await contextValue.currentUser;
+
+        if (currentUser.role !== "ADMIN") {
+          throw new Error("Unauthorized");
+        }
+
+        const user = await prisma.user.update({
+          where: {
+            id: parseInt(args.userId),
+          },
+          data: {
+            suspendedAt: null,
+          },
+        });
+
+        return { user };
+      },
+    },
+  },
+});
 
 export const schema = new GraphQLSchema({
   query: new GraphQLObjectType({
@@ -130,4 +190,5 @@ export const schema = new GraphQLSchema({
       },
     },
   }),
+  mutation: Mutation,
 });

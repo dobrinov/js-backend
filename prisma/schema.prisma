@@ -13,13 +13,14 @@ enum Role {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   name           String
-  email          String   @unique
+  email          String    @unique
   passwordDigest String
-  role           Role     @default(BASIC)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  role           Role      @default(BASIC)
+  suspendedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
 
   @@map("users")
 }
