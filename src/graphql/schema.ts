@@ -1,6 +1,7 @@
 import {
   GraphQLEnumType,
   GraphQLID,
+  GraphQLInt,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
@@ -26,6 +27,7 @@ const user = new GraphQLObjectType({
     email: { type: new GraphQLNonNull(GraphQLString) },
     role: { type: new GraphQLNonNull(UserRoleEnumType) },
     suspendedAt: { type: GraphQLString },
+    lastLoggedAt: { type: GraphQLString },
   },
 });
 
@@ -54,6 +56,7 @@ const userConnection = new GraphQLNonNull(
       edges: {
         type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(userEdge))),
       },
+      totalCount: { type: new GraphQLNonNull(GraphQLInt) },
       pageInfo: { type: new GraphQLNonNull(pageInfo) },
     },
   })
@@ -151,11 +154,14 @@ export const schema = new GraphQLSchema({
                 ? offsetToCursor(users[users.length - 1].id)
                 : null;
 
+            const totalCount = await prisma.user.count();
+
             return {
               edges: users.map((user) => ({
                 cursor: offsetToCursor(user.id),
                 node: user,
               })),
+              totalCount,
               pageInfo: {
                 startCursor,
                 endCursor,

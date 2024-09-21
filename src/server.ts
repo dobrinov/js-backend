@@ -119,6 +119,15 @@ async function execute() {
         return response.code(401).send("User is suspended");
       }
 
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          lastLoggedAt: new Date(),
+        },
+      });
+
       const jwt = await encodeJWT(user.id);
 
       response.header("Access-Control-Allow-Origin", "*");

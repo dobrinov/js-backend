@@ -19,6 +19,7 @@ model User {
   passwordDigest String
   role           Role      @default(BASIC)
   suspendedAt    DateTime?
+  lastLoggedAt   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @default(now()) @updatedAt
 

@@ -9,6 +9,7 @@ CREATE TABLE "users" (
     "passwordDigest" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'BASIC',
     "suspendedAt" TIMESTAMP(3),
+    "lastLoggedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
