@@ -4,6 +4,7 @@ You can use this project as a starting point for your Node GraphQL backend.
 
 ### Getting started
 ```
+cp .env.example .env
 npm install
 npm run db:setup
 npm run dev
