@@ -1,9 +1,9 @@
-import { compareSync, hashSync } from "bcrypt";
+import {compareSync, hashSync} from 'bcrypt'
 
 export function hashPassword(value: string): string {
-  return hashSync(value, 10);
+  return hashSync(value, 10)
 }
 
 export function checkPassword(value: string, hash: string): boolean {
-  return compareSync(value, hash);
+  return compareSync(value, hash)
 }

@@ -1,5 +1,5 @@
-import { User } from "@prisma/client";
+import {User} from '@prisma/client'
 
 export type Context = {
-  currentUser: Promise<User>;
-};
+  currentUser: Promise<User>
+}

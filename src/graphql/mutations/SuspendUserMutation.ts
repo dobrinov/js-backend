@@ -1,48 +1,43 @@
-import {
-  GraphQLFieldResolver,
-  GraphQLID,
-  GraphQLNonNull,
-  GraphQLObjectType,
-} from "graphql";
-import prisma from "../../db";
-import { Context } from "../context";
-import { UserType } from "../types/UserType";
+import {GraphQLFieldResolver, GraphQLID, GraphQLNonNull, GraphQLObjectType} from 'graphql'
+import prisma from '../../db'
+import {Context} from '../context'
+import {UserType} from '../types/UserType'
 
 const resolve: GraphQLFieldResolver<
   any,
   Context,
   {
-    userId: string;
+    userId: string
   },
   any
 > = async (
   _,
   {
-    userId,
+    userId
   }: {
-    userId: string;
+    userId: string
   },
   context
 ) => {
-  const currentUser = await context.currentUser;
+  const currentUser = await context.currentUser
 
-  if (currentUser.role !== "ADMIN") throw new Error("Unauthorized");
+  if (currentUser.role !== 'ADMIN') throw new Error('Unauthorized')
 
   const user = await prisma.user.update({
-    where: { id: parseInt(userId) },
-    data: { suspendedAt: new Date() },
-  });
+    where: {id: parseInt(userId)},
+    data: {suspendedAt: new Date()}
+  })
 
-  return { user };
-};
+  return {user}
+}
 
 export const SuspendUserMutation = {
   type: new GraphQLObjectType({
-    name: "suspendUserPayload",
+    name: 'suspendUserPayload',
     fields: {
-      user: { type: UserType },
-    },
+      user: {type: UserType}
+    }
   }),
-  args: { userId: { type: new GraphQLNonNull(GraphQLID) } },
-  resolve,
-};
+  args: {userId: {type: new GraphQLNonNull(GraphQLID)}},
+  resolve
+}
