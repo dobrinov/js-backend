@@ -1,200 +1,90 @@
-import {
-  GraphQLEnumType,
-  GraphQLID,
-  GraphQLInt,
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLObjectType,
-  GraphQLSchema,
-  GraphQLString,
-} from "graphql";
-import { connectionArgs, cursorToOffset, offsetToCursor } from "graphql-relay";
-import prisma from "../db";
+import {GraphQLNonNull, GraphQLObjectType, GraphQLSchema} from 'graphql'
+import {connectionArgs, cursorToOffset, offsetToCursor} from 'graphql-relay'
+import prisma from '../db'
+import {Context} from './context'
+import {ActivateUserMutation, CreateUserMutation, SuspendUserMutation} from './mutations'
+import {UserConnectionType} from './types/UserConnectionType'
+import {UserType} from './types/UserType'
 
-const UserRoleEnumType = new GraphQLEnumType({
-  name: "UserRole",
-  values: {
-    BASIC: { value: "BASIC" },
-    ADMIN: { value: "ADMIN" },
-  },
-});
-
-const user = new GraphQLObjectType({
-  name: "User",
+const mutation = new GraphQLObjectType<any, Context>({
+  name: 'Mutation',
   fields: {
-    id: { type: new GraphQLNonNull(GraphQLString) },
-    name: { type: new GraphQLNonNull(GraphQLString) },
-    email: { type: new GraphQLNonNull(GraphQLString) },
-    role: { type: new GraphQLNonNull(UserRoleEnumType) },
-    suspendedAt: { type: GraphQLString },
-    lastLoggedAt: { type: GraphQLString },
-  },
-});
+    createUser: CreateUserMutation,
+    suspendUser: SuspendUserMutation,
+    activateUser: ActivateUserMutation
+  }
+})
 
-const pageInfo = new GraphQLObjectType({
-  name: "PageInfo",
+const query = new GraphQLObjectType<any, Context>({
+  name: 'Query',
   fields: {
-    startCursor: { type: GraphQLString },
-    endCursor: { type: GraphQLString },
-    hasPreviousPage: { type: new GraphQLNonNull(GraphQLString) },
-    hasNextPage: { type: new GraphQLNonNull(GraphQLString) },
-  },
-});
-
-const userEdge = new GraphQLObjectType({
-  name: "UserEdge",
-  fields: {
-    cursor: { type: new GraphQLNonNull(GraphQLString) },
-    node: { type: new GraphQLNonNull(user) },
-  },
-});
-
-const userConnection = new GraphQLNonNull(
-  new GraphQLObjectType({
-    name: "UserConnection",
-    fields: {
-      edges: {
-        type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(userEdge))),
-      },
-      totalCount: { type: new GraphQLNonNull(GraphQLInt) },
-      pageInfo: { type: new GraphQLNonNull(pageInfo) },
+    viewer: {
+      type: new GraphQLNonNull(UserType),
+      resolve: (_parent, _args, contextValue) => contextValue.currentUser
     },
-  })
-);
-
-const Mutation = new GraphQLObjectType({
-  name: "Mutation",
-  fields: {
-    suspendUser: {
-      type: new GraphQLObjectType({
-        name: "suspendUserPayload",
-        fields: {
-          user: { type: user },
-        },
-      }),
-      args: { userId: { type: new GraphQLNonNull(GraphQLID) } },
+    users: {
+      type: UserConnectionType,
+      args: connectionArgs,
       resolve: async (_parent, args, contextValue) => {
-        const currentUser = await contextValue.currentUser;
+        const currentUser = await contextValue.currentUser
 
-        if (currentUser.role !== "ADMIN") throw new Error("Unauthorized");
+        if (currentUser.role === 'ADMIN') {
+          const first = args.first ?? 10
 
-        const user = await prisma.user.update({
-          where: {
-            id: parseInt(args.userId), // Use Relay ID here
-          },
-          data: {
-            suspendedAt: new Date(),
-          },
-        });
+          const usersPlusOne = await prisma.user.findMany({
+            take: first + 1,
+            skip: args.after ? cursorToOffset(args.after) : undefined,
+            orderBy: {
+              id: 'asc'
+            }
+          })
 
-        return { user };
-      },
-    },
-    activateUser: {
-      type: new GraphQLObjectType({
-        name: "activateUserPayload",
-        fields: {
-          user: { type: user },
-        },
-      }),
-      args: { userId: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve: async (_parent, args, contextValue) => {
-        const currentUser = await contextValue.currentUser;
+          const users = usersPlusOne.slice(0, first)
+          const hasNextPage = usersPlusOne.length > first
+          const startCursor = users.length > 0 ? offsetToCursor(users[0].id) : null
+          const endCursor = users.length > 0 ? offsetToCursor(users[users.length - 1].id) : null
 
-        if (currentUser.role !== "ADMIN") {
-          throw new Error("Unauthorized");
-        }
+          const totalCount = await prisma.user.count()
 
-        const user = await prisma.user.update({
-          where: {
-            id: parseInt(args.userId),
-          },
-          data: {
-            suspendedAt: null,
-          },
-        });
-
-        return { user };
-      },
-    },
-  },
-});
-
-export const schema = new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: "Query",
-    fields: {
-      viewer: {
-        type: new GraphQLNonNull(user),
-        resolve: (_parent, _args, contextValue) => contextValue.currentUser,
-      },
-      users: {
-        type: userConnection,
-        args: connectionArgs,
-        resolve: async (_parent, args, contextValue) => {
-          const currentUser = await contextValue.currentUser;
-
-          if (currentUser.role === "ADMIN") {
-            const first = args.first ?? 10;
-
-            const usersPlusOne = await prisma.user.findMany({
-              take: first + 1,
-              skip: args.after ? cursorToOffset(args.after) : undefined,
-              orderBy: {
-                id: "asc",
-              },
-            });
-
-            const users = usersPlusOne.slice(0, first);
-            const hasNextPage = usersPlusOne.length > first;
-            const startCursor =
-              users.length > 0 ? offsetToCursor(users[0].id) : null;
-            const endCursor =
-              users.length > 0
-                ? offsetToCursor(users[users.length - 1].id)
-                : null;
-
-            const totalCount = await prisma.user.count();
-
-            return {
-              edges: users.map((user) => ({
-                cursor: offsetToCursor(user.id),
-                node: user,
-              })),
-              totalCount,
-              pageInfo: {
-                startCursor,
-                endCursor,
-                hasPreviousPage: false,
-                hasNextPage,
-              },
-            };
-          } else {
-            const users = await prisma.user.findMany({
-              where: {
-                id: currentUser.id,
-              },
-              orderBy: {
-                id: "asc",
-              },
-            });
-
-            return {
-              edges: users.map((user) => ({
-                cursor: offsetToCursor(user.id),
-                node: user,
-              })),
-              pageInfo: {
-                startCursor: offsetToCursor(users[0].id),
-                endCursor: offsetToCursor(users[0].id),
-                hasPreviousPage: false,
-                hasNextPage: false,
-              },
-            };
+          return {
+            edges: users.map(user => ({
+              cursor: offsetToCursor(user.id),
+              node: user
+            })),
+            totalCount,
+            pageInfo: {
+              startCursor,
+              endCursor,
+              hasPreviousPage: false,
+              hasNextPage
+            }
           }
-        },
-      },
-    },
-  }),
-  mutation: Mutation,
-});
+        } else {
+          const users = await prisma.user.findMany({
+            where: {
+              id: currentUser.id
+            },
+            orderBy: {
+              id: 'asc'
+            }
+          })
+
+          return {
+            edges: users.map(user => ({
+              cursor: offsetToCursor(user.id),
+              node: user
+            })),
+            pageInfo: {
+              startCursor: offsetToCursor(users[0].id),
+              endCursor: offsetToCursor(users[0].id),
+              hasPreviousPage: false,
+              hasNextPage: false
+            }
+          }
+        }
+      }
+    }
+  }
+})
+
+export const schema = new GraphQLSchema({query, mutation})
