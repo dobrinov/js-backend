@@ -8,8 +8,7 @@ import {
   GraphQLString,
   GraphQLUnionType
 } from 'graphql'
-import prisma from '../../db'
-import {hashPassword} from '../../util/password'
+import {createUser} from '../../services'
 import {Context} from '../context'
 import {UserType} from '../types/UserType'
 import {FailedMutationWithFields, FailedMutationWithFieldsType} from './failable-mutation'
@@ -35,6 +34,7 @@ const SuccessfulCreateUserPayload = new GraphQLObjectType({
 type CreateUserInput = {
   name: string
   email: string
+  role: User['role'] // TODO: This is needed to satisfy the createUser service return type.
   password: string
   passwordConfirmation: string
 }
@@ -73,32 +73,16 @@ const resolve: GraphQLFieldResolver<
 
   if (currentUser.role !== 'ADMIN') throw new Error('Unauthorized')
 
-  const fieldFailures: FailurePayload['fieldFailures'] = []
-  if (!name) fieldFailures.push({field: 'name', message: 'Name is required'})
-  if (!email) fieldFailures.push({field: 'email', message: 'Email is required'})
-  if (!password) fieldFailures.push({field: 'password', message: 'Password is required'})
-  if (!passwordConfirmation)
-    fieldFailures.push({field: 'passwordConfirmation', message: 'Password confirmation is required'})
+  const result = await createUser({name, role: 'BASIC', email, password, passwordConfirmation})
 
-  if (fieldFailures.length > 0) return {failureMessage: null, fieldFailures}
-
-  if (password !== passwordConfirmation) {
-    return {failureMessage: 'Passwords do not match', fieldFailures: []}
-  }
-
-  const existingUser = await prisma.user.findUnique({where: {email}})
-  if (existingUser) return {failureMessage: 'User exists', fieldFailures: []}
-
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      role: 'BASIC',
-      passwordDigest: hashPassword(password)
+  if ('data' in result) {
+    return {user: result.data}
+  } else {
+    return {
+      failureMessage: 'error' in result ? result.error : null,
+      fieldFailures: 'fieldErrors' in result ? result.fieldErrors : []
     }
-  })
-
-  return {user}
+  }
 }
 
 export const CreateUserMutation: GraphQLFieldConfig<any, Context> = {
