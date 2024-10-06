@@ -1,15 +1,18 @@
+import {User} from '@prisma/client'
 import {
   GraphQLFieldConfig,
   GraphQLFieldResolver,
   GraphQLInputObjectType,
   GraphQLNonNull,
   GraphQLObjectType,
-  GraphQLString
+  GraphQLString,
+  GraphQLUnionType
 } from 'graphql'
 import prisma from '../../db'
 import {hashPassword} from '../../util/password'
 import {Context} from '../context'
 import {UserType} from '../types/UserType'
+import {FailedMutationWithFields, FailedMutationWithFieldsType} from './failable-mutation'
 
 const CreateUserInputType = new GraphQLInputObjectType({
   name: 'CreateUserInput',
@@ -22,10 +25,34 @@ const CreateUserInputType = new GraphQLInputObjectType({
   })
 })
 
-const CreateUserPayload = new GraphQLObjectType({
-  name: 'CreateUserPayload',
+const SuccessfulCreateUserPayload = new GraphQLObjectType({
+  name: 'SuccessfulCreateUserPayload',
   fields: {
-    user: {type: UserType}
+    user: {type: new GraphQLNonNull(UserType)}
+  }
+})
+
+type CreateUserInput = {
+  name: string
+  email: string
+  password: string
+  passwordConfirmation: string
+}
+
+type SuccessPayload = {user: User}
+type FailurePayload = FailedMutationWithFields<CreateUserInput>
+
+const CreateUserPayload = new GraphQLUnionType({
+  name: 'CreateUserPayload',
+  types: [SuccessfulCreateUserPayload, FailedMutationWithFieldsType],
+  resolveType: value => {
+    if ('failureMessage' in value) {
+      return 'FailedMutationWithFields'
+    } else if ('user' in value) {
+      return 'SuccessfulCreateUserPayload'
+    } else {
+      throw new Error('Unknown payload type')
+    }
   }
 })
 
@@ -40,14 +67,27 @@ const resolve: GraphQLFieldResolver<
       passwordConfirmation: string
     }
   },
-  any
+  Promise<SuccessPayload | FailurePayload>
 > = async (_, {input: {name, email, password, passwordConfirmation}}, context) => {
   const currentUser = await context.currentUser
 
   if (currentUser.role !== 'ADMIN') throw new Error('Unauthorized')
 
-  // TODO: Ensure that the password and passwordConfirmation match
-  // Return {data: {success: false, errorMessage: "Passwords do not match"}} if they don't
+  const fieldFailures: FailurePayload['fieldFailures'] = []
+  if (!name) fieldFailures.push({field: 'name', message: 'Name is required'})
+  if (!email) fieldFailures.push({field: 'email', message: 'Email is required'})
+  if (!password) fieldFailures.push({field: 'password', message: 'Password is required'})
+  if (!passwordConfirmation)
+    fieldFailures.push({field: 'passwordConfirmation', message: 'Password confirmation is required'})
+
+  if (fieldFailures.length > 0) return {failureMessage: null, fieldFailures}
+
+  if (password !== passwordConfirmation) {
+    return {failureMessage: 'Passwords do not match', fieldFailures: []}
+  }
+
+  const existingUser = await prisma.user.findUnique({where: {email}})
+  if (existingUser) return {failureMessage: 'User exists', fieldFailures: []}
 
   const user = await prisma.user.create({
     data: {
@@ -58,7 +98,6 @@ const resolve: GraphQLFieldResolver<
     }
   })
 
-  // The payload should be {data: {success: true, user}} if they don't
   return {user}
 }
 
