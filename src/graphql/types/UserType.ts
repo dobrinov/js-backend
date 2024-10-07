@@ -1,7 +1,7 @@
 import {GraphQLEnumType, GraphQLNonNull, GraphQLObjectType, GraphQLString} from 'graphql'
 import {Context} from '../context'
 
-const UserRoleEnumType = new GraphQLEnumType({
+export const UserRoleEnumType = new GraphQLEnumType({
   name: 'UserRole',
   values: {
     BASIC: {value: 'BASIC'},

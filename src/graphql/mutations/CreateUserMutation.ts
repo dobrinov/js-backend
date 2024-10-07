@@ -10,13 +10,14 @@ import {
 } from 'graphql'
 import {createUser} from '../../services'
 import {Context} from '../context'
-import {UserType} from '../types/UserType'
+import {UserRoleEnumType, UserType} from '../types/UserType'
 import {FailedMutationWithFields, FailedMutationWithFieldsType} from './failable-mutation'
 
 const CreateUserInputType = new GraphQLInputObjectType({
   name: 'CreateUserInput',
   description: 'Input payload for creating user',
   fields: () => ({
+    role: {type: new GraphQLNonNull(UserRoleEnumType)},
     name: {type: new GraphQLNonNull(GraphQLString)},
     email: {type: new GraphQLNonNull(GraphQLString)},
     password: {type: new GraphQLNonNull(GraphQLString)},
@@ -34,7 +35,7 @@ const SuccessfulCreateUserPayload = new GraphQLObjectType({
 type CreateUserInput = {
   name: string
   email: string
-  role: User['role'] // TODO: This is needed to satisfy the createUser service return type.
+  role: User['role']
   password: string
   passwordConfirmation: string
 }
@@ -59,21 +60,14 @@ const CreateUserPayload = new GraphQLUnionType({
 const resolve: GraphQLFieldResolver<
   any,
   Context,
-  {
-    input: {
-      name: string
-      email: string
-      password: string
-      passwordConfirmation: string
-    }
-  },
+  {input: CreateUserInput},
   Promise<SuccessPayload | FailurePayload>
-> = async (_, {input: {name, email, password, passwordConfirmation}}, context) => {
+> = async (_, {input: {role, name, email, password, passwordConfirmation}}, context) => {
   const currentUser = await context.currentUser
 
   if (currentUser.role !== 'ADMIN') throw new Error('Unauthorized')
 
-  const result = await createUser({name, role: 'BASIC', email, password, passwordConfirmation})
+  const result = await createUser({name, role, email, password, passwordConfirmation})
 
   if ('data' in result) {
     return {user: result.data}
