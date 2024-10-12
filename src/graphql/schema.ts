@@ -74,6 +74,7 @@ const query = new GraphQLObjectType<any, Context>({
               cursor: offsetToCursor(user.id),
               node: user
             })),
+            totalCount: 0,
             pageInfo: {
               startCursor: offsetToCursor(users[0].id),
               endCursor: offsetToCursor(users[0].id),
